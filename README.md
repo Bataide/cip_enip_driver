@@ -1,5 +1,5 @@
 # About
-Driver to communicate with Rockwell PLCs (ControlLogix family) using CIP protocol over Ethernet/IP. This library was developed in .NET Core 2.0, supporting cross-platform (Linux/Windows).
+Driver/library to communicate with Rockwell PLCs (ControlLogix family) using CIP protocol over Ethernet/IP. This library was developed in .NET Core 2.0, supporting cross-platform (Linux/Windows).
 
 # Features
 - When the CIP class is instantiated, one outcoming connection is established with the PLC to send messages to PLC, working like a send channel (data from Driver to PLC). A socket server is created to handle incoming connections, receiving channel (data from PLC to Driver). Each 'MSG' instruction block initialize a receiving connection in the Driver side;
