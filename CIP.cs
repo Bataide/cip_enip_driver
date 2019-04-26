@@ -3,7 +3,7 @@
 // License: GNU General Public License 3.0
 // Public Repo: https://github.com/Bataide/cip_enip_driver
 // Class: CIP
-// Description: Class responsible to estabilish outcomming connection (only one) and receive incomming
+// Description: Class responsible to establish outcoming connection (only one) and receive incoming
 // connections (multiples)
 // -----------------------------------------------------------------------------------------------------------------
 using System;

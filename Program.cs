@@ -26,7 +26,7 @@ namespace Techsteel.Drivers.CIP
             // The second parameter is the PLC's IP addres using the same default port (0xAF12, don't change it.
             // PLC's listen only in this port)
             // PS: the 'Connected' checkbox in the 'MSG' instruction block property ('Connection' tab) MUST be unchecked.
-            // Don't worry, this doesn't affect the communication performance. The socket connection remains estabilished even 
+            // Don't worry, this doesn't affect the communication performance. The socket connection remains established even 
             // when is not sending messages. The NOP messagem was implemented (working like a life/watchdog msg).
             m_Cip = new CIP("0.0.0.0", "192.168.91.168");
             m_Cip.OnConnRecReceiveMsgData += OnConnRecReceiveMsgData; // <- event to receive data from incoming connections
@@ -38,7 +38,7 @@ namespace Techsteel.Drivers.CIP
             
             while (true)
             {
-                // If the send connection is estabilished and ready to send...
+                // If the send connection is established and ready to send...
                 if (m_Cip.SendChannelConnected() && m_Cip.ReadyToSend())
                 {
                     try
