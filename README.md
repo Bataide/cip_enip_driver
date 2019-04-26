@@ -24,3 +24,5 @@ Driver/library to communicate with Rockwell PLCs (ControlLogix family) using CIP
 ![Alt text](plc_program_2.PNG)
 ![Alt text](plc_program_3.PNG)
 ![Alt text](plc_program_4.PNG)
+
+<meta name="google-site-verification" content="DDrF9iv6_IvjRYI6CWMHWpnh3Li6U0qu6HlsvfmrQZA" />
