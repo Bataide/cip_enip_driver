@@ -24,4 +24,4 @@ degradating the network). The information will be send to us just hen it's ready
 ![Alt text](plc_program_4.PNG)
 
 # Donate
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](bruno.pc.ataide@gmail.com)
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)]bruno.pc.ataide@gmail.com
