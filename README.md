@@ -22,6 +22,3 @@ degradating the network). The information will be send to us just hen it's ready
 ![Alt text](plc_program_2.PNG)
 ![Alt text](plc_program_3.PNG)
 ![Alt text](plc_program_4.PNG)
-
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](bruno.pc.ataide@gmail.com)
-
