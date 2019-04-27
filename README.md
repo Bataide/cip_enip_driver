@@ -15,12 +15,11 @@ Driver/library to communicate with Rockwell PLCs (ControlLogix family) using CIP
 - Receiving data in PLC: in some scenarios we could have a higher traffic of data from Driver to PLC and the received data could be overwriting before it is treated. In these cases, we recommend that an ACK message is implemented for data flow control (from PLC to Driver). Driver would send the next message just when the ACK message is received;
 - To use a different listen port in the Driver side (the default port is 44818), just change de 'Path' field in the 'MSG' instruction block property windows. Like this: 'ENET1, 2, 192.168.91.182:44820, 1, 0'. Now the new port is 44820. Understanding 'Path' field: ENET1 is a summary of the first backplane and slot (1, 4 – in my case). The second attribute is always 2 (to go outside to the Ethernet). The third attribute is the IP address followed by the port. The last two attributes are the remote backplane and slot (could be anything, the Driver doesn’t check these attributes);
 
-# Donate
-[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=KB3BF9QDW2DRC&currency_code=USD&source=url)
-
-
 # PLC Program Example
 ![Alt text](plc_program_1.PNG)
 ![Alt text](plc_program_2.PNG)
 ![Alt text](plc_program_3.PNG)
 ![Alt text](plc_program_4.PNG)
+
+# Donate
+[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=KB3BF9QDW2DRC&currency_code=USD&source=url)
