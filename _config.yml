@@ -1,3 +1,8 @@
 theme: jekyll-theme-minimal
+title: CIP Ethernet/IP Protocol Driver Rockwell
+description: Driver/library to communicate with Rockwell PLCs (ControlLogix family) using CIP protocol over Ethernet/IP. This library was developed in .NET Core 2.0, supporting cross-platform (Linux/Windows).
+url: https://bataide.github.io/cip_enip_driver/
+author: Bruno Ataíde
+google_site_verification: I_Qx0Vi7Dn6iau1PsIDYm27u0gN1KNX0aMRXehfbKqM
 plugins:
   - jekyll-seo-tag
