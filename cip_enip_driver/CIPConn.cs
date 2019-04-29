@@ -16,9 +16,10 @@ using System.Linq;
 
 namespace Techsteel.Drivers.CIP
 {    
-    public class CIPConn
+    public class CIPConn : Traceable
     {
         public event CIP.DlgConnRecReceivedMsgData OnReceiveData;
+
         private string LOG_TAG = "CIP RCV CONN.";
         private MemoryStream m_ReceiveBuffer = new MemoryStream();
         private SocketConn m_ScktConn;
@@ -39,14 +40,21 @@ namespace Techsteel.Drivers.CIP
             m_ScktConn.OnReceiveData += ScktConn_OnReceiveData;
             m_ScktConn.OnReceiveError += ScktConn_OnReceiveError;
             m_ScktConn.OnSendError += ScktConn_OnSendError;
-            m_Thread = new Thread(ThreadTask);
-            m_Thread.Start();            
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Connection established: {1}", LOG_TAG, scktConn.RemoteEndPoint));
+            Trace(EventType.Info, string.Format("{0} - Connection established: {1}", LOG_TAG, m_ScktConn.RemoteEndPoint));
+        }
+
+        public void Open()
+        {
+            if (m_Thread == null)
+            {
+                m_Thread = new Thread(ThreadTask);
+                m_Thread.Start();            
+            }
         }
 
         public void Close()
         {
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - CIP conn. will be closed", LOG_TAG));
+            Trace(EventType.Info, string.Format("{0} - CIP conn. will be closed", LOG_TAG));
             m_ScktConn.Close();
             m_Terminate = true;
             m_ThreadResetEvent.Set();
@@ -56,12 +64,12 @@ namespace Techsteel.Drivers.CIP
         {           
             try
             {
-                EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Connection is closed: {1}", LOG_TAG, scktConn.RemoteEndPoint));
+                Trace(EventType.Info, string.Format("{0} - Connection is closed: {1}", LOG_TAG, scktConn.RemoteEndPoint));
                 Close();                
             }
             catch (Exception e)
             {
-                EventTracer.Trace(e);
+                Trace(e);
             }
         }
 
@@ -73,24 +81,24 @@ namespace Techsteel.Drivers.CIP
             }
             catch (Exception e)
             {
-                EventTracer.Trace(e);
+                Trace(e);
             }
         }
 
         private void ScktConn_OnReceiveError(SocketConn scktConn, Exception scktExp)
         {            
-            EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - Receive socket error {1}", LOG_TAG, scktExp.Message));
+            Trace(EventType.Error, string.Format("{0} - Receive socket error {1}", LOG_TAG, scktExp.Message));
         }
 
         private void ScktConn_OnSendError(SocketConn scktConn, Exception scktExp)
         {            
-            EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - Send socket error {1}", LOG_TAG, scktExp.Message));
+            Trace(EventType.Error, string.Format("{0} - Send socket error {1}", LOG_TAG, scktExp.Message));
         }        
 
         public void ReceiveBytes(byte[] data)
         {
             m_ActivityTimeRef = DateTime.Now;
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - {1} bytes received!", LOG_TAG, data.Length));
+            Trace(EventType.Info, string.Format("{0} - {1} bytes received!", LOG_TAG, data.Length));
             m_ReceiveBuffer.Position = m_ReceiveBuffer.Length;
             m_ReceiveBuffer.Write(data, 0, data.Length);
             long pointer = 0;
@@ -115,14 +123,14 @@ namespace Techsteel.Drivers.CIP
                     }
                     else
                     {
-                        EventTracer.Trace(EventTracer.EventType.Warning, string.Format("{0} - Waiting for the rest of msg. body", LOG_TAG));
+                        Trace(EventType.Warning, string.Format("{0} - Waiting for the rest of msg. body", LOG_TAG));
                         m_WaitingRemainingBytes = DateTime.Now;
                         break;
                     }
                 }
                 else
                 {
-                    EventTracer.Trace(EventTracer.EventType.Warning, string.Format("{0} - Waiting for the rest of msg. header", LOG_TAG));
+                    Trace(EventType.Warning, string.Format("{0} - Waiting for the rest of msg. header", LOG_TAG));
                     m_WaitingRemainingBytes = DateTime.Now;
                     break;
                 }
@@ -132,7 +140,7 @@ namespace Techsteel.Drivers.CIP
                 m_ReceiveBuffer.SetLength(0);
                 m_ReceiveBuffer.Capacity = 0;
                 m_ReceiveBuffer.Position = 0;                
-                EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Receive buffer clear!", LOG_TAG));
+                Trace(EventType.Info, string.Format("{0} - Receive buffer clear!", LOG_TAG));
             }
         }
         
@@ -140,7 +148,7 @@ namespace Techsteel.Drivers.CIP
         {
             try
             {
-                EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
+                Trace(EventType.Info, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
                 long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));            
                 switch (header.Command)
                 {
@@ -217,14 +225,14 @@ namespace Techsteel.Drivers.CIP
 
                     default:
                     {
-                        EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - Command {1} not implemented", LOG_TAG, header.Command));
+                        Trace(EventType.Error, string.Format("{0} - Command {1} not implemented", LOG_TAG, header.Command));
                         break;
                     }
                 }
             }
             catch (Exception e)
             {
-                EventTracer.Trace(e);
+                Trace(e);
             }
         }
 
@@ -237,7 +245,7 @@ namespace Techsteel.Drivers.CIP
                     if (m_WaitingRemainingBytes != DateTime.MinValue)
                         if (DateTime.Now.Subtract(m_WaitingRemainingBytes).TotalSeconds > 2)
                         {
-                            EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - So long time waiting the rest of message bytes. The connection will be closed. {1}", LOG_TAG, m_ScktConn.RemoteEndPoint));
+                            Trace(EventType.Error, string.Format("{0} - So long time waiting the rest of message bytes. The connection will be closed. {1}", LOG_TAG, m_ScktConn.RemoteEndPoint));
                             Close();
                         }
 
@@ -246,7 +254,7 @@ namespace Techsteel.Drivers.CIP
                         {
                             byte[] msgBytes = m_SendMsgList[0];
                             m_ScktConn.SendData(msgBytes);
-                            EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - {1} bytes sent !!!", LOG_TAG, msgBytes.Length));
+                            Trace(EventType.Info, string.Format("{0} - {1} bytes sent !!!", LOG_TAG, msgBytes.Length));
                             m_SendMsgList.RemoveAt(0);
                         }
 
@@ -260,7 +268,7 @@ namespace Techsteel.Drivers.CIP
             }
             catch (Exception exc)
             {
-                EventTracer.Trace(exc);
+                Trace(exc);
             }
         }    
 
@@ -271,7 +279,7 @@ namespace Techsteel.Drivers.CIP
             byte[] allBytes = new byte[headerBytes.Length + msgBytes.Length];
             Array.Copy(headerBytes, allBytes, headerBytes.Length);
             Array.Copy(msgBytes, 0, allBytes, headerBytes.Length, msgBytes.Length);
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Msg. '{1}' queued to be send", LOG_TAG, header.Command));
+            Trace(EventType.Info, string.Format("{0} - Msg. '{1}' queued to be send", LOG_TAG, header.Command));
             lock (m_SendMsgList)
                 m_SendMsgList.Add(allBytes);
             m_ThreadResetEvent.Set();            

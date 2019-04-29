@@ -17,7 +17,7 @@ using System.Runtime.InteropServices;
 
 namespace Techsteel.Drivers.CIP
 {    
-    public class CIP
+    public class CIP : Traceable
     {
         public enum ConnType 
         {
@@ -43,7 +43,7 @@ namespace Techsteel.Drivers.CIP
         public delegate void DlgConnRecReceivedMsgData(string remoteEndPoint, string symbol, ElementaryDataType dataType, byte[] data);
         
         public event DlgConnStatusChanged OnConnStatusChanged;
-        public event DlgConnRecReceivedMsgData OnConnRecReceiveMsgData;       
+        public event DlgConnRecReceivedMsgData OnConnRecReceiveMsgData;
         
         private SocketServer m_SocketServer;
         private SocketClient m_SocketClient;
@@ -68,26 +68,31 @@ namespace Techsteel.Drivers.CIP
         {
         }
 
-        public CIP(string localAddress, int localPort, string remoteAddress, int remotePort)
+        public CIP(string localAddress, int localPort, string remoteAddress, int remotePort) : base()
         {
             m_SocketServer = new SocketServer(localAddress, localPort);
+            m_SocketServer.OnEventTrace += SocketServer_OnEventTrace;
             m_SocketServer.OnConnect += SocketServer_OnConnect;
             m_SocketServer.OnDisconnect += SocketServer_OnDisconnect;
 
             m_SocketClient = new SocketClient(remoteAddress, remotePort);
+            m_SocketClient.OnEventTrace += SocketClient_OnEventTrace;
             m_SocketClient.OnConnect += SocketClient_OnConnect;
             m_SocketClient.OnDisconnect += SocketClient_OnDisconnect;
             m_SocketClient.OnConnectError += SocketClient_OnConnectError;
             m_SocketClient.OnReceiveData += SocketClient_OnReceiveData;
             m_SocketClient.OnReceiveError += SocketClient_OnReceiveError;
             m_SocketClient.OnSendError += SocketClient_OnSendError;
-
-            m_Thread = new Thread(ThreadTask);
-            m_Thread.Start();
         }
 
         public void Open()
         {
+            if (m_Thread == null)
+            {
+                m_Thread = new Thread(ThreadTask);
+                m_Thread.Start();
+            }
+
             m_SocketServer.Open();
             m_SocketClient.Open();
         }
@@ -240,8 +245,8 @@ namespace Techsteel.Drivers.CIP
             }
             catch (Exception exc)
             {
-                EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - Thread exception: {1}", LOG_TAG, exc.Message));
-                EventTracer.Trace(exc);
+                Trace(EventType.Error, string.Format("{0} - Thread exception: {1}", LOG_TAG, exc.Message));
+                Trace(exc);
             }
         }
 
@@ -252,7 +257,7 @@ namespace Techsteel.Drivers.CIP
             byte[] allBytes = new byte[headerBytes.Length + msgBytes.Length];
             Array.Copy(headerBytes, allBytes, headerBytes.Length);
             Array.Copy(msgBytes, 0, allBytes, headerBytes.Length, msgBytes.Length);
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Msg. '{1}' queued to be send", LOG_TAG, header.Command));
+            Trace(EventType.Info, string.Format("{0} - Msg. '{1}' queued to be send", LOG_TAG, header.Command));
             m_SocketClient.SendData(allBytes);
         }
 
@@ -261,7 +266,7 @@ namespace Techsteel.Drivers.CIP
             try
             {
                 m_ActivityTimeRef = DateTime.Now;
-                EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - {1} bytes received!", LOG_TAG, data.Length));
+                Trace(EventType.Info, string.Format("{0} - {1} bytes received!", LOG_TAG, data.Length));
                 m_ReceiveBuffer.Position = m_ReceiveBuffer.Length;
                 m_ReceiveBuffer.Write(data, 0, data.Length);
                 long pointer = 0;
@@ -286,22 +291,22 @@ namespace Techsteel.Drivers.CIP
                             }
                             catch (Exception e)
                             {
-                                EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - Exception in msg. factory", LOG_TAG, data.Length));
-                                EventTracer.Trace(e);
+                                Trace(EventType.Error, string.Format("{0} - Exception in msg. factory", LOG_TAG, data.Length));
+                                Trace(e);
                             }
                             m_WaitingRemainingBytes = DateTime.MinValue;
                             pointer += msgSize;
                         }
                         else
                         {
-                            EventTracer.Trace(EventTracer.EventType.Warning, string.Format("{0} - Waiting for the rest of msg. body", LOG_TAG));
+                            Trace(EventType.Warning, string.Format("{0} - Waiting for the rest of msg. body", LOG_TAG));
                             m_WaitingRemainingBytes = DateTime.Now;
                             break;
                         }
                     }
                     else
                     {
-                        EventTracer.Trace(EventTracer.EventType.Warning, string.Format("{0} - Waiting for the rest of msg. header", LOG_TAG));
+                        Trace(EventType.Warning, string.Format("{0} - Waiting for the rest of msg. header", LOG_TAG));
                         m_WaitingRemainingBytes = DateTime.Now;
                         break;
                     }
@@ -311,20 +316,20 @@ namespace Techsteel.Drivers.CIP
                     m_ReceiveBuffer.SetLength(0);
                     m_ReceiveBuffer.Capacity = 0;
                     m_ReceiveBuffer.Position = 0;                
-                    EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Receive buffer clear!", LOG_TAG));
+                    Trace(EventType.Info, string.Format("{0} - Receive buffer clear!", LOG_TAG));
                 }                
             }
             catch (Exception e)
             {
-                EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - Exception in receive data function: {1}", LOG_TAG, e.Message));
-                EventTracer.Trace(e);
+                Trace(EventType.Error, string.Format("{0} - Exception in receive data function: {1}", LOG_TAG, e.Message));
+                Trace(e);
             }
         }
 
         private void MessageFactory(CommandEtherNetIPHeader header, byte[] bodyBytes)
         {
             int pointer = 0;
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
+            Trace(EventType.Info, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
             long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));            
             switch (header.Command)
             {
@@ -345,7 +350,7 @@ namespace Techsteel.Drivers.CIP
                     if (header.Status == 0 && header.SessionHandle != 0)
                     {
                         MsgRegisterSessionReply msgReply = (MsgRegisterSessionReply)MsgListServiceReply.Deserialize(typeof(MsgRegisterSessionReply), bodyBytes, ref pointer);
-                        EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Registration session number: {1}", LOG_TAG, header.SessionHandle));
+                        Trace(EventType.Info, string.Format("{0} - Registration session number: {1}", LOG_TAG, header.SessionHandle));
                         m_SessionHandle = header.SessionHandle;
                         m_ClientConnStates = ClientConnStates.SendReceive;
                     }
@@ -357,7 +362,7 @@ namespace Techsteel.Drivers.CIP
                 case EncapsulationCommands.SendRRData:
                 {
                     MsgUnconnectedSendReply msgReply = (MsgUnconnectedSendReply)MsgUnconnectedSendReply.Deserialize(typeof(MsgUnconnectedSendReply), bodyBytes, ref pointer);
-                    long sendContext = BitConverter.ToInt64(header.SenderContext);
+                    long sendContext = BitConverter.ToInt64(header.SenderContext, 0);
                     if (sendContext != 0 && sendContext == m_SenderContext)
                     {
                         m_SendStatusResult = msgReply.CommonIndustrialProtocolReply.GeneralStatus;
@@ -425,30 +430,30 @@ namespace Techsteel.Drivers.CIP
         private void SocketClient_OnConnect(SocketConn scktConn)
         {
             m_ClientConnStates = ClientConnStates.SendListServices;
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Connection established: {0}", LOG_TAG, scktConn.RemoteEndPoint));
+            Trace(EventType.Info, string.Format("{0} - Connection established: {0}", LOG_TAG, scktConn.RemoteEndPoint));
             OnConnStatusChanged?.Invoke(ConnType.Send, true, scktConn.ConnID);
         }
 
         private void SocketClient_OnDisconnect(SocketConn scktConn)
         {
             m_ClientConnStates = ClientConnStates.Disconnected;
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("{0} - Connection is closed: {0}", LOG_TAG, scktConn.RemoteEndPoint));
+            Trace(EventType.Info, string.Format("{0} - Connection is closed: {0}", LOG_TAG, scktConn.RemoteEndPoint));
             OnConnStatusChanged?.Invoke(ConnType.Send, false, scktConn.ConnID);
         }
 
         private void SocketClient_OnConnectError(Exception scktExp)
         {            
-            EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - Error during client connection establishment: {0}", LOG_TAG, scktExp.Message));
+            Trace(EventType.Error, string.Format("{0} - Error during client connection establishment: {0}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketClient_OnReceiveError(Exception scktExp)
         {            
-            EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - Error on receiving data from client connection: {0}", LOG_TAG, scktExp.Message));
+            Trace(EventType.Error, string.Format("{0} - Error on receiving data from client connection: {0}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketClient_OnSendError(Exception scktExp)
         {   
-            EventTracer.Trace(EventTracer.EventType.Error, string.Format("{0} - Error on sending data from client connection: {0}", LOG_TAG, scktExp.Message));         
+            Trace(EventType.Error, string.Format("{0} - Error on sending data from client connection: {0}", LOG_TAG, scktExp.Message));         
         }
 
         private void SocketServer_OnConnect(SocketConn scktConn)
@@ -456,7 +461,9 @@ namespace Techsteel.Drivers.CIP
             lock (m_CIPConnList)
             {
                 CIPConn cipConn = new CIPConn(scktConn);
+                cipConn.OnEventTrace += CIPConn_OnEventTrace;               
                 cipConn.OnReceiveData += OnConnRecReceivedDataMsg;
+                cipConn.Open();
                 m_CIPConnList.Add(scktConn, cipConn);
             }
             OnConnStatusChanged?.Invoke(ConnType.Receive, true, scktConn.ConnID);            
@@ -478,8 +485,23 @@ namespace Techsteel.Drivers.CIP
             }
             catch (Exception e)
             {
-                EventTracer.Trace(e);
+                Trace(e);
             }
+        }
+
+        private void CIPConn_OnEventTrace(EventType type, string message)
+        {
+            Trace(type, message);
+        }
+
+        private void SocketClient_OnEventTrace(EventType type, string message)
+        {
+            Trace(type, message);
+        }
+
+        private void SocketServer_OnEventTrace(EventType type, string message)
+        {
+            Trace(type, message);
         }
     }
 }

@@ -295,30 +295,6 @@ namespace Techsteel.Drivers.CIP
             }
         }
 
-        public static void LogObject(object obj)
-        {
-            foreach (FieldInfo fi in obj.GetType().GetFields())
-            {
-                Type fieldType = fi.FieldType;
-                object objField = fi.GetValue(obj);
-                if (objField != null)
-                {
-                    if (fieldType.IsArray)
-                    {
-                        for (int i = 0; i < ((Array)objField).Length; i++)
-                        {
-                            object objElem = ((Array)objField).GetValue(i);
-                            EventTracer.Trace(EventTracer.EventType.Full, string.Format("{0}[{1}] = {2}", fi.Name, i, objElem));
-                        }                    
-                    }
-                    else
-                        EventTracer.Trace(EventTracer.EventType.Full, string.Format("{0} = {1}", fi.Name, objField));
-                }
-                else
-                    EventTracer.Trace(EventTracer.EventType.Full, string.Format("{0} = {1}", fi.Name, "NULL"));
-            }
-        }
-
         public virtual ushort GetArraySize(string fieldName)
         {
             return 0;

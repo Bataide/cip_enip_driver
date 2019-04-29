@@ -10,7 +10,7 @@ using System.Text;
 
 namespace Techsteel.Drivers.CIP
 {
-    public class EventTracer
+    public class Traceable
     {
         public enum EventType
         {
@@ -23,20 +23,22 @@ namespace Techsteel.Drivers.CIP
             Full = 6,
         }
 
-        public static Action<EventType, string> TraceMethod = DefaultTraceMethod;
+        public object m_Mutex = new object();
 
-        public static EventType LogLevel { get; set; }
+        public delegate void DlgEventTrace(EventType type, string message);
 
-        public static string Header {get; set; }
+        public event DlgEventTrace OnEventTrace;
 
-        static EventTracer() { LogLevel = EventType.Full; }
+        public EventType LogLevel { get; set; }
 
-        public static void Trace(Exception exception)
+        public Traceable() { LogLevel = EventType.Info; }
+
+        public void Trace(Exception exception)
         {
             Trace(EventType.Exception, ExtractAllExceptions(exception));
         }
 
-        private static string ExtractAllExceptions(Exception exc)
+        private string ExtractAllExceptions(Exception exc)
         {
             if (exc == null)
                 return "Exception was null";
@@ -50,27 +52,24 @@ namespace Techsteel.Drivers.CIP
             return sb.ToString();
         }
 
-        public static void Trace(EventType type, string message, params object[] args)
+        public void Trace(EventType type, string message, params object[] args)
         {
             if (type <= LogLevel)
                 Trace(type, string.Format(message, args));
         }
 
-        public static void Trace(EventType type, string message)
+        public void Trace(EventType type, string message)
         {
             DefaultTraceMethod(type, message);
         }
 
-        private static void DefaultTraceMethod(EventType type, string message)
+        private void DefaultTraceMethod(EventType type, string message)
         {
             try
             {
                 if (type <= LogLevel)
-                    Console.WriteLine("{0:HH:mm:ss,fff} - {3} - {1,-9} - {2}",
-                        DateTime.Now,
-                        type,
-                        message,
-                        Header);
+                    lock (m_Mutex)
+                        OnEventTrace?.Invoke(type, message);
             }
             catch (Exception exc)
             {

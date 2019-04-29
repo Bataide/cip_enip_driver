@@ -11,7 +11,7 @@ using System.Net.Sockets;
 
 namespace Techsteel.Drivers.CIP
 {
-    public class SocketConn
+    public class SocketConn : Traceable
     {
         private Socket m_Socket;
         private string m_RemoteEndPoint;
@@ -93,7 +93,7 @@ namespace Techsteel.Drivers.CIP
             }
             catch (Exception exc)
             {
-                EventTracer.Trace(EventTracer.EventType.Error,
+                Trace(EventType.Error,
                     "Error on socket shutdown {0}: {1}",
                     ConnID,
                     exc.Message);
@@ -106,7 +106,7 @@ namespace Techsteel.Drivers.CIP
                 if (!(Thread.CurrentThread.ManagedThreadId == m_ReceiveThread.ManagedThreadId) &&
                     !m_ReceiveThread.Join(WAITS_OTHER_SIDE_CLOSING))
                 {
-                    EventTracer.Trace(EventTracer.EventType.Exception,
+                    Trace(EventType.Exception,
                         "Forcefully closing socket as the other side didn't closed: {0}",
                             ConnID);
                     ClosesSocket();
@@ -127,7 +127,7 @@ namespace Techsteel.Drivers.CIP
                 m_Socket?.Close();
             }
             catch (Exception exc){
-                EventTracer.Trace(EventTracer.EventType.Error,
+                Trace(EventType.Error,
                     "Error closing socket {0}: {1}",
                     ConnID,
                     exc.Message);
@@ -147,7 +147,7 @@ namespace Techsteel.Drivers.CIP
                     int bytesSent = m_Socket.Send(data, 0, data.Length, SocketFlags.None, out errorCode);
                     if (errorCode != SocketError.Success)
                     {
-                        EventTracer.Trace(EventTracer.EventType.Exception,
+                        Trace(EventType.Exception,
                             "Socket send error {3}. ConnID: {0} Data.Length: {1} bytesSent: {2}",
                             ConnID,
                             data.Length,
@@ -157,14 +157,14 @@ namespace Techsteel.Drivers.CIP
                     }
                     if (bytesSent < data.Length)
                     {
-                        EventTracer.Trace(EventTracer.EventType.Exception,
+                        Trace(EventType.Exception,
                             "Not all data was putted on the socket buffer. ConnID: {0} Data.Length: {1} bytesSent: {2}",
                             ConnID,
                             data.Length,
                             bytesSent);
                         return false;
                     }
-                    EventTracer.Trace(EventTracer.EventType.Full,
+                    Trace(EventType.Full,
                         "Socket data sent. ConnID: {0} Length: {1} byte(s)",
                         ConnID,
                         data.Length);
@@ -172,7 +172,7 @@ namespace Techsteel.Drivers.CIP
                 }
                 else
                 {
-                    EventTracer.Trace(EventTracer.EventType.Exception,
+                    Trace(EventType.Exception,
                         "Can't send socket data on disconnected connections. ConnID: {0}",
                         ConnID);
                     return false;
@@ -180,19 +180,19 @@ namespace Techsteel.Drivers.CIP
             }
             catch (Exception e)
             {
-                EventTracer.Trace(EventTracer.EventType.Error,
+                Trace(EventType.Error,
                     "Exception sending socket data for ConnID {0}",
                     ConnID);
                 try { OnSendError?.Invoke(this, e); }
-                catch (Exception exc) { EventTracer.Trace(exc); }
+                catch (Exception exc) { Trace(exc); }
                 try
                 {
-                    EventTracer.Trace(EventTracer.EventType.Error,
+                    Trace(EventType.Error,
                         "Starting socket connection closing because of sending error: {0}",
                         ConnID);
                     Close();
                 }
-                catch (Exception exc) { EventTracer.Trace(exc); }
+                catch (Exception exc) { Trace(exc); }
                 return false;
             }
             finally
@@ -216,10 +216,10 @@ namespace Techsteel.Drivers.CIP
                         }
                         catch (Exception e)
                         {
-                            EventTracer.Trace(EventTracer.EventType.Error,
+                            Trace(EventType.Error,
                                 "Receiving socket data, connection will be closed: {0}",
                                 ConnID);
-                            EventTracer.Trace(e);
+                            Trace(e);
                             OnReceiveError?.Invoke(this, e);
                         }
 
@@ -227,7 +227,7 @@ namespace Techsteel.Drivers.CIP
                         {
                             byte[] data = new byte[byteCount];
                             Array.Copy(m_Buffer, data, byteCount);
-                            EventTracer.Trace(EventTracer.EventType.Full,
+                            Trace(EventType.Full,
                                 "Received socket data. ConnID: {0} Length: {1} byte(s)",
                                 ConnID,
                                 byteCount);
@@ -235,7 +235,7 @@ namespace Techsteel.Drivers.CIP
                         }
                         else
                         {
-                            EventTracer.Trace(EventTracer.EventType.Full,
+                            Trace(EventType.Full,
                                 "Closing socket connection (from the other side!). ConnID: {0}",
                                 ConnID);
                             Close();
@@ -243,19 +243,19 @@ namespace Techsteel.Drivers.CIP
                     }
                     else
                     {
-                        EventTracer.Trace(EventTracer.EventType.Full,
+                        Trace(EventType.Full,
                             "Closing socket connection (!Connected). ConnID: {0}",
                             ConnID);
                         Close();
                     }
                 }
-                EventTracer.Trace(EventTracer.EventType.Full,
+                Trace(EventType.Full,
                     "Finished receiving thread. ConnID: {0}",
                     ConnID);
             }
             catch (Exception exc)
             {
-                EventTracer.Trace(exc);
+                Trace(exc);
             }
         }
 

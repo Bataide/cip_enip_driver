@@ -8,8 +8,9 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Techsteel.Drivers.CIP;
 
-namespace Techsteel.Drivers.CIP
+namespace sample_program
 {
     class Program
     {
@@ -18,9 +19,6 @@ namespace Techsteel.Drivers.CIP
 
         static void Main(string[] args)
         {
-            // Set the log level
-            EventTracer.LogLevel = EventTracer.EventType.Info;
-
             // Create CIP communitation object. The first parameter is the local IP address to
             // listen incoming connection in default port 0xAF12 (from 'MSG' block in ladder program).
             // The second parameter is the PLC's IP addres using the same default port (0xAF12, don't change it.
@@ -29,6 +27,7 @@ namespace Techsteel.Drivers.CIP
             // Don't worry, this doesn't affect the communication performance. The socket connection remains established even 
             // when is not sending messages. The NOP messagem was implemented (working like a life/watchdog msg).
             m_Cip = new CIP("0.0.0.0", "192.168.91.168");
+            m_Cip.OnEventTrace += Cip_OnEventTrace;
             m_Cip.OnConnRecReceiveMsgData += OnConnRecReceiveMsgData; // <- event to receive data from incoming connections
             m_Cip.OnConnStatusChanged += OnConnStatusChanged; // <- event to get connection state changes
             m_Cip.Open();
@@ -49,7 +48,7 @@ namespace Techsteel.Drivers.CIP
                             m_BytesToSend[i] = (byte)(m_BytesToSend[i - 1] + 1);
 
                         // Log.
-                        EventTracer.Trace(EventTracer.EventType.Info, string.Format("Sending data ({0} bytes)...", m_BytesToSend.Length));
+                        Cip_OnEventTrace(Traceable.EventType.Info, string.Format("Sending data ({0} bytes)...", m_BytesToSend.Length));
 
                         // Write data in the 'RECEIVE' tag in the PLC ('RECEIVE' is the tag's name)
                         // You have to create a tag with this exactly name, array of SINT type (one byte), total size 300
@@ -57,12 +56,12 @@ namespace Techsteel.Drivers.CIP
 
                         // Success log
                         string strData = string.Join("|", m_BytesToSend.Select(a => a.ToString()));
-                        EventTracer.Trace(EventTracer.EventType.Info, string.Format("Send msg. successful ({0} bytes)... [{1}]", m_BytesToSend.Length, strData));
+                        Cip_OnEventTrace(Traceable.EventType.Info, string.Format("Send msg. successful ({0} bytes)... [{1}]", m_BytesToSend.Length, strData));
                     }
                     catch (Exception e)
                     {
                         // Error log
-                        EventTracer.Trace(EventTracer.EventType.Exception, string.Format("Fail to send data. Error: {0}", e.Message));
+                        Cip_OnEventTrace(Traceable.EventType.Exception, string.Format("Fail to send data. Error: {0}", e.Message));
                     }
                 }
 
@@ -80,7 +79,7 @@ namespace Techsteel.Drivers.CIP
         {
             // Log
             string strData = string.Join("|", data.Select(a => a.ToString()));
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("Data received ({0} bytes). Tag: {1} Type: {2} Data: [{3}]", data.Length, symbol, dataType, strData));
+            Cip_OnEventTrace(Traceable.EventType.Info, string.Format("Data received ({0} bytes). Tag: {1} Type: {2} Data: [{3}]", data.Length, symbol, dataType, strData));
         }
 
         // Function to notify connections state changes
@@ -90,10 +89,19 @@ namespace Techsteel.Drivers.CIP
         private static void OnConnStatusChanged(CIP.ConnType connType, bool connected, string connID)
         {
             // Log
-            EventTracer.Trace(EventTracer.EventType.Info, string.Format("Connections state changed. ConnType: {0} IsConnected: {1} ConnID: {2}",
+            Cip_OnEventTrace(Traceable.EventType.Info, string.Format("Connections state changed. ConnType: {0} IsConnected: {1} ConnID: {2}",
                 connType,
                 connected ? "YES" : "NO",
                 connID));
         }
+
+        private static void Cip_OnEventTrace(Traceable.EventType type, string message)
+        {
+            Console.WriteLine("{0:HH:mm:ss,fff} - {1,-9} - {2}",
+                DateTime.Now,
+                type,
+                message);
+        }
     }
 }
+

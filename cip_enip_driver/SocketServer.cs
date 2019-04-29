@@ -14,7 +14,7 @@ using System.Collections.Concurrent;
 
 namespace Techsteel.Drivers.CIP
 {
-    public class SocketServer
+    public class SocketServer : Traceable
     {
         private Socket m_IncomingSocket;
         private string m_LocalAddress;
@@ -85,29 +85,29 @@ namespace Techsteel.Drivers.CIP
                 {
                     if (m_ConnList.TryRemove(kvp.Key, out SocketConn removed))
                     {
-                        EventTracer.Trace(EventTracer.EventType.Data,
+                        Trace(EventType.Data,
                             "Removed connection {0} from the socket server connection list",
                             removed);
                         removed.Close();
                     }
                     else
-                        EventTracer.Trace(EventTracer.EventType.Exception,
+                        Trace(EventType.Exception,
                             "Removing connection from the socket server connection list: {0}",
                             kvp.Key);
                 }
             }
-            catch (Exception exc) { EventTracer.Trace(exc); }
+            catch (Exception exc) { Trace(exc); }
         }
 
         public void CloseConnection(SocketConn scktConn)
         {
             scktConn.Close();
             if (m_ConnList.TryRemove(scktConn, out SocketConn removed))
-                EventTracer.Trace(EventTracer.EventType.Data,
+                Trace(EventType.Data,
                     "Removed connection {0} from the socket server connection list",
                     removed);
             else
-                EventTracer.Trace(EventTracer.EventType.Exception,
+                Trace(EventType.Exception,
                     "Removing connection from the socket server connection list: {0}",
                     scktConn);
         }
@@ -138,11 +138,11 @@ namespace Techsteel.Drivers.CIP
         private void SocketConn_Disconnect(SocketConn scktConn)
         {
             if (m_ConnList.TryRemove(scktConn, out SocketConn removed))
-                EventTracer.Trace(EventTracer.EventType.Data,
+                Trace(EventType.Data,
                     "Removed connection {0} from the socket server connection list by disconnection event",
                     removed);
             else
-                EventTracer.Trace(EventTracer.EventType.Exception,
+                Trace(EventType.Exception,
                     "Removing connection {0} from the socket server connection list by disconnection event",
                     scktConn);
 
@@ -177,7 +177,7 @@ namespace Techsteel.Drivers.CIP
                     }
                     catch (SocketException e)
                     {
-                        EventTracer.Trace(e);
+                        Trace(e);
                         sckt = null;
                     }
                     if (sckt != null)
@@ -186,11 +186,12 @@ namespace Techsteel.Drivers.CIP
                             m_ConnList.Count < MaxConn)
                         {
                             var scktConn = new SocketConn(sckt, false);
+                            scktConn.OnEventTrace += ScktConn_OnEventTrace;
                             scktConn.OnDisconnect += new SocketConn.DlgDisconnect(SocketConn_Disconnect);
                             scktConn.OnSendError += new SocketConn.DlgSendError(SocketConn_SendError);
                             if (!m_ConnList.TryAdd(scktConn, scktConn))
                             {
-                                EventTracer.Trace(EventTracer.EventType.Exception,
+                                Trace(EventType.Exception,
                                     "Couldn't add connection to socket server connection list. Refusing connection. ConnID: {0}",
                                     scktConn);
                                 sckt.Close();
@@ -208,8 +209,8 @@ namespace Techsteel.Drivers.CIP
                         else
                         {
                             sckt.Close();
-                            EventTracer.Trace(
-                                EventTracer.EventType.Warning,
+                            Trace(
+                                EventType.Warning,
                                 "Socket connection refused. Reached connection limit of {0} connections. {1}/{2}",
                                 MaxConn,
                                 sckt.LocalEndPoint,
@@ -218,7 +219,12 @@ namespace Techsteel.Drivers.CIP
                     }
                 }
             }
-            catch (Exception exc) { EventTracer.Trace(exc); }
+            catch (Exception exc) { Trace(exc); }
+        }
+
+        private void ScktConn_OnEventTrace(EventType type, string message)
+        {
+            Trace(type, message);
         }
     }
 }

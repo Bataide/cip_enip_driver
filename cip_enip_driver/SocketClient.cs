@@ -11,7 +11,7 @@ using System.Net.Sockets;
 
 namespace Techsteel.Drivers.CIP
 {
-    public class SocketClient
+    public class SocketClient : Traceable
     {
         private SocketConn m_SocketConn = null;
         private string m_RemoteAddress = null;
@@ -63,7 +63,7 @@ namespace Techsteel.Drivers.CIP
 
         public void Close(bool keepCurrConn)
         {
-            EventTracer.Trace(EventTracer.EventType.Data,
+            Trace(EventType.Data,
                 "Closing socket client {0}",
                 RemoteEndPoint);
             m_Terminate = true;
@@ -98,7 +98,7 @@ namespace Techsteel.Drivers.CIP
             }
             catch (Exception exc)
             {
-                EventTracer.Trace(exc);
+                Trace(exc);
             }
             finally
             {
@@ -143,6 +143,7 @@ namespace Techsteel.Drivers.CIP
                         {
                             socket.Connect(m_RemoteAddress, m_RemotePort);
                             m_SocketConn = new SocketConn(socket, false);
+                            m_SocketConn.OnEventTrace += ScktConn_OnEventTrace;
                             m_SocketConn.OnDisconnect += new SocketConn.DlgDisconnect(SocketConn_Disconnect);
                             m_SocketConn.OnSendError += new SocketConn.DlgSendError(SocketConn_SendError);
                             if (m_StartScktConnReadThread)
@@ -155,7 +156,7 @@ namespace Techsteel.Drivers.CIP
                         }
                         catch (Exception e)
                         {
-                            EventTracer.Trace(EventTracer.EventType.Error,
+                            Trace(EventType.Error,
                                 "Exception connecting the socket. Remote endpoint: {0}",
                                 RemoteEndPoint);
                             OnConnectError?.Invoke(e);
@@ -167,8 +168,13 @@ namespace Techsteel.Drivers.CIP
             }
             catch (Exception exc)
             {
-                EventTracer.Trace(exc);
+                Trace(exc);
             }
+        }
+
+        private void ScktConn_OnEventTrace(EventType type, string message)
+        {
+            Trace(type, message);
         }
     }
 }
