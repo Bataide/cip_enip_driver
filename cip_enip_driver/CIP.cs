@@ -35,7 +35,7 @@ namespace Techsteel.Drivers.CIP
             SendReceive,
         }
 
-        private const int DEFAULT_PORT = 0xAF12;
+        public const int DEFAULT_PORT = 0xAF12;
         private const string LOG_TAG = "CIP SND CONN.";
         private const int SEND_TIME_OUT = 2000;
 
@@ -116,9 +116,19 @@ namespace Techsteel.Drivers.CIP
             return m_ClientConnStates == ClientConnStates.SendReceive;
         }
 
-        public int RecConnCount()
+        public int RecConnCount
         {
-            return m_CIPConnList?.Count() ?? 0;
+            get { return m_CIPConnList?.Count() ?? 0; }
+        }
+
+        public bool SndConnEstabilished
+        {
+            get { return m_SocketClient?.Connected ?? false; }
+        }
+
+        public bool Connected
+        {
+            get { return SndConnEstabilished && (RecConnCount > 0); }
         }
 
         private void ThreadTask()
