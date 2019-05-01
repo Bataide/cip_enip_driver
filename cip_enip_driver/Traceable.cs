@@ -29,9 +29,9 @@ namespace Techsteel.Drivers.CIP
 
         public event DlgEventTrace OnEventTrace;
 
-        public EventType LogLevel { get; set; }
-
-        public Traceable() { LogLevel = EventType.Info; }
+        public Traceable()
+        {
+        }
 
         public void Trace(Exception exception)
         {
@@ -54,8 +54,7 @@ namespace Techsteel.Drivers.CIP
 
         public void Trace(EventType type, string message, params object[] args)
         {
-            if (type <= LogLevel)
-                Trace(type, string.Format(message, args));
+            Trace(type, string.Format(message, args));
         }
 
         public void Trace(EventType type, string message)
@@ -67,9 +66,8 @@ namespace Techsteel.Drivers.CIP
         {
             try
             {
-                if (type <= LogLevel)
-                    lock (m_Mutex)
-                        OnEventTrace?.Invoke(type, message);
+                lock (m_Mutex)
+                    OnEventTrace?.Invoke(type, message);
             }
             catch (Exception exc)
             {
