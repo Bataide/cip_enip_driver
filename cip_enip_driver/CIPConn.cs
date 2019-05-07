@@ -39,8 +39,7 @@ namespace Techsteel.Drivers.CIP
             m_ScktConn.OnDisconnect += ScktConn_OnDisconnect;
             m_ScktConn.OnReceiveData += ScktConn_OnReceiveData;
             m_ScktConn.OnReceiveError += ScktConn_OnReceiveError;
-            m_ScktConn.OnSendError += ScktConn_OnSendError;
-            Trace(EventType.Info, string.Format("{0} - Connection established: {1}", LOG_TAG, m_ScktConn.RemoteEndPoint));
+            m_ScktConn.OnSendError += ScktConn_OnSendError;            
         }
 
         public void Open()
@@ -49,12 +48,13 @@ namespace Techsteel.Drivers.CIP
             {
                 m_Thread = new Thread(ThreadTask);
                 m_Thread.Start();            
+                Trace(EventType.Info, string.Format("{0} - Connection established: {1}", LOG_TAG, m_ScktConn.RemoteEndPoint));
             }
         }
 
         public void Close()
         {
-            Trace(EventType.Info, string.Format("{0} - CIP conn. will be closed", LOG_TAG));
+            Trace(EventType.Full, string.Format("{0} - CIP conn. will be closed", LOG_TAG));
             m_ScktConn.Close();
             m_Terminate = true;
             m_ThreadResetEvent.Set();
@@ -98,7 +98,7 @@ namespace Techsteel.Drivers.CIP
         public void ReceiveBytes(byte[] data)
         {
             m_ActivityTimeRef = DateTime.Now;
-            Trace(EventType.Info, string.Format("{0} - {1} bytes received!", LOG_TAG, data.Length));
+            Trace(EventType.Full, string.Format("{0} - {1} bytes received!", LOG_TAG, data.Length));
             m_ReceiveBuffer.Position = m_ReceiveBuffer.Length;
             m_ReceiveBuffer.Write(data, 0, data.Length);
             long pointer = 0;
@@ -140,7 +140,7 @@ namespace Techsteel.Drivers.CIP
                 m_ReceiveBuffer.SetLength(0);
                 m_ReceiveBuffer.Capacity = 0;
                 m_ReceiveBuffer.Position = 0;                
-                Trace(EventType.Info, string.Format("{0} - Receive buffer clear!", LOG_TAG));
+                Trace(EventType.Full, string.Format("{0} - Receive buffer clear!", LOG_TAG));
             }
         }
         
@@ -148,7 +148,7 @@ namespace Techsteel.Drivers.CIP
         {
             try
             {
-                Trace(EventType.Info, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
+                Trace(EventType.Full, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
                 long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));            
                 switch (header.Command)
                 {
@@ -254,7 +254,7 @@ namespace Techsteel.Drivers.CIP
                         {
                             byte[] msgBytes = m_SendMsgList[0];
                             m_ScktConn.SendData(msgBytes);
-                            Trace(EventType.Info, string.Format("{0} - {1} bytes sent !!!", LOG_TAG, msgBytes.Length));
+                            Trace(EventType.Full, string.Format("{0} - {1} bytes sent !!!", LOG_TAG, msgBytes.Length));
                             m_SendMsgList.RemoveAt(0);
                         }
 
@@ -279,7 +279,7 @@ namespace Techsteel.Drivers.CIP
             byte[] allBytes = new byte[headerBytes.Length + msgBytes.Length];
             Array.Copy(headerBytes, allBytes, headerBytes.Length);
             Array.Copy(msgBytes, 0, allBytes, headerBytes.Length, msgBytes.Length);
-            Trace(EventType.Info, string.Format("{0} - Msg. '{1}' queued to be send", LOG_TAG, header.Command));
+            Trace(EventType.Full, string.Format("{0} - Msg. '{1}' queued to be send", LOG_TAG, header.Command));
             lock (m_SendMsgList)
                 m_SendMsgList.Add(allBytes);
             m_ThreadResetEvent.Set();            

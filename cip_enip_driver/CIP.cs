@@ -233,6 +233,17 @@ namespace Techsteel.Drivers.CIP
                                         }
                                     }
                                 };
+
+                                msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList.Clear();
+                                string[] segs = m_Symbol.Split(new char[] {'.'});
+                                foreach (string seg in segs)
+                                    msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList.Add(
+                                        new DataPathSegmentANSISymb {
+                                            PathSegmentType = 0x91,
+                                            DataSize = (byte)seg.Length,
+                                            ANSISymbol = Encoding.ASCII.GetBytes(seg.Length % 2 == 0 ? seg : seg + "\0")
+                                        });
+
                                 msg.CIPConnectionManagerUnconnSnd.Pad = (msg.CIPConnectionManagerUnconnSnd.SizeOf() % 2) == 0 ? null : (byte?)0;
                                 msg.CIPConnectionManagerUnconnSnd.RoutePathSize = (byte)(msg.CIPConnectionManagerUnconnSnd.RoutePath.Sum(a => a.SizeOf()) / 2);
                                 msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.RequestPathSize = (byte)(msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList.Sum(a => a.SizeOf()) / 2);
@@ -267,7 +278,7 @@ namespace Techsteel.Drivers.CIP
             byte[] allBytes = new byte[headerBytes.Length + msgBytes.Length];
             Array.Copy(headerBytes, allBytes, headerBytes.Length);
             Array.Copy(msgBytes, 0, allBytes, headerBytes.Length, msgBytes.Length);
-            Trace(EventType.Info, string.Format("{0} - Msg. '{1}' queued to be send", LOG_TAG, header.Command));
+            Trace(EventType.Full, string.Format("{0} - Msg. '{1}' queued to be send", LOG_TAG, header.Command));
             m_SocketClient.SendData(allBytes);
         }
 
@@ -276,7 +287,7 @@ namespace Techsteel.Drivers.CIP
             try
             {
                 m_ActivityTimeRef = DateTime.Now;
-                Trace(EventType.Info, string.Format("{0} - {1} bytes received!", LOG_TAG, data.Length));
+                Trace(EventType.Full, string.Format("{0} - {1} bytes received!", LOG_TAG, data.Length));
                 m_ReceiveBuffer.Position = m_ReceiveBuffer.Length;
                 m_ReceiveBuffer.Write(data, 0, data.Length);
                 long pointer = 0;
@@ -326,7 +337,7 @@ namespace Techsteel.Drivers.CIP
                     m_ReceiveBuffer.SetLength(0);
                     m_ReceiveBuffer.Capacity = 0;
                     m_ReceiveBuffer.Position = 0;                
-                    Trace(EventType.Info, string.Format("{0} - Receive buffer clear!", LOG_TAG));
+                    Trace(EventType.Full, string.Format("{0} - Receive buffer clear!", LOG_TAG));
                 }                
             }
             catch (Exception e)
@@ -339,7 +350,7 @@ namespace Techsteel.Drivers.CIP
         private void MessageFactory(CommandEtherNetIPHeader header, byte[] bodyBytes)
         {
             int pointer = 0;
-            Trace(EventType.Info, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
+            Trace(EventType.Full, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
             long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));            
             switch (header.Command)
             {
@@ -360,7 +371,7 @@ namespace Techsteel.Drivers.CIP
                     if (header.Status == 0 && header.SessionHandle != 0)
                     {
                         MsgRegisterSessionReply msgReply = (MsgRegisterSessionReply)MsgListServiceReply.Deserialize(typeof(MsgRegisterSessionReply), bodyBytes, ref pointer);
-                        Trace(EventType.Info, string.Format("{0} - Registration session number: {1}", LOG_TAG, header.SessionHandle));
+                        Trace(EventType.Full, string.Format("{0} - Registration session number: {1}", LOG_TAG, header.SessionHandle));
                         m_SessionHandle = header.SessionHandle;
                         m_ClientConnStates = ClientConnStates.SendReceive;
                     }
