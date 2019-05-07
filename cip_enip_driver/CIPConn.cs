@@ -200,7 +200,7 @@ namespace Techsteel.Drivers.CIP
                             typeof(MsgUnconnectedSendRequest), bodyBytes, ref pointer);
                         string symbol = Encoding.ASCII.GetString(((DataPathSegmentANSISymb)unconnSndReq.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList[0]).ANSISymbol);
                         ElementaryDataType dataType = unconnSndReq.CIPConnectionManagerUnconnSnd.CIPClassGeneric.DataType;
-                        OnReceiveData?.Invoke(m_ScktConn.RemoteEndPoint, symbol, dataType, unconnSndReq.CIPConnectionManagerUnconnSnd.CIPClassGeneric.CIPClassGenericCmdSpecificData);
+                        OnReceiveData?.Invoke(m_ScktConn.RemoteEndPoint, symbol.Replace("\0", ""), dataType, unconnSndReq.CIPConnectionManagerUnconnSnd.CIPClassGeneric.CIPClassGenericCmdSpecificData);
                         MsgUnconnectedSendReply msg = new MsgUnconnectedSendReply();
                         msg.CommandSpecificDataSendRRData = unconnSndReq.CommandSpecificDataSendRRData;
                         CommandSpecificDataSendRRDataItem item = msg.CommandSpecificDataSendRRData.List.First(

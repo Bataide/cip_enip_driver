@@ -123,7 +123,7 @@ namespace Techsteel.Drivers.CIP
 
         public bool SndConnEstabilished
         {
-            get { return m_SocketClient?.Connected ?? false; }
+            get { return (m_SocketClient?.Connected ?? false) && ReadyToSend(); }
         }
 
         public bool Connected
@@ -419,7 +419,7 @@ namespace Techsteel.Drivers.CIP
                             if (m_SendStatusResult.HasValue)
                             {
                                 if (m_SendStatusResult.Value != 0)
-                                    throw new Exception(string.Format("Send error code: {0}", m_SendStatusResult.Value));
+                                    throw new Exception(string.Format("Send error code: {0}-{1}", m_SendStatusResult.Value, (CipStatusCode)m_SendStatusResult.Value));
                             }
                             else
                             {
