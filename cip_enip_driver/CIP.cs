@@ -38,12 +38,14 @@ namespace Techsteel.Drivers.CIP
         public const int DEFAULT_PORT = 0xAF12;
         private const string LOG_TAG = "CIP SND CONN.";
         private const int SEND_TIME_OUT = 2000;
-
+        
         public delegate void DlgConnStatusChanged(ConnType connType, bool connected, string connID);
         public delegate void DlgConnRecReceivedMsgData(string remoteEndPoint, string symbol, ElementaryDataType dataType, byte[] data);
+        public delegate void DlgRegistrationSession(uint sessionNumber);
         
         public event DlgConnStatusChanged OnConnStatusChanged;
         public event DlgConnRecReceivedMsgData OnConnRecReceiveMsgData;
+        public event DlgRegistrationSession OnRegistrationSession;
         
         private SocketServer m_SocketServer;
         private SocketClient m_SocketClient;
@@ -374,6 +376,7 @@ namespace Techsteel.Drivers.CIP
                         Trace(EventType.Info, string.Format("{0} - Registration session number: {1}", LOG_TAG, header.SessionHandle));
                         m_SessionHandle = header.SessionHandle;
                         m_ClientConnStates = ClientConnStates.SendReceive;
+                        OnRegistrationSession?.Invoke(m_SessionHandle);
                     }
                     else
                         throw new Exception(string.Format("Error on registration session. Error: {0}", header.Status));
