@@ -188,6 +188,7 @@ namespace Techsteel.Drivers.CIP
                         header.SessionHandle = m_SessionHandle;
                         header.Length = msg.SizeOf();
                         SendMessage(header, msg);
+                        Trace(EventType.Info, string.Format("{0} - Registration session number: {1}", LOG_TAG, header.SessionHandle));
                         break;
                     }
 
