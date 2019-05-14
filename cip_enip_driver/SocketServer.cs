@@ -71,8 +71,7 @@ namespace Techsteel.Drivers.CIP
         public void TerminateListen()
         {
             m_Terminate = true;
-            if (m_IncomingSocket != null && m_IncomingSocket.Connected)
-                m_IncomingSocket.Shutdown(SocketShutdown.Both);
+            m_IncomingSocket?.Shutdown(SocketShutdown.Both);
             m_IncomingSocket?.Close();
             m_AcceptDelayWaitHandle.Set();
         }
