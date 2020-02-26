@@ -314,7 +314,7 @@ namespace Techsteel.Drivers.CIP
                             }
                             catch (Exception e)
                             {
-                                Trace(EventType.Error, string.Format("{0} - Exception in msg. factory", LOG_TAG, data.Length));
+                                Trace(EventType.Error, string.Format("{0} - Exception in msg. factory", LOG_TAG));
                                 Trace(e);
                             }
                             m_WaitingRemainingBytes = DateTime.MinValue;
@@ -454,30 +454,30 @@ namespace Techsteel.Drivers.CIP
         private void SocketClient_OnConnect(SocketConn scktConn)
         {
             m_ClientConnStates = ClientConnStates.SendListServices;
-            Trace(EventType.Info, string.Format("{0} - Connection established: {0}", LOG_TAG, scktConn.RemoteEndPoint));
+            Trace(EventType.Info, string.Format("{0} - Connection established: {1}", LOG_TAG, scktConn.RemoteEndPoint));
             OnConnStatusChanged?.Invoke(ConnType.Send, true, scktConn.ConnID);
         }
 
         private void SocketClient_OnDisconnect(SocketConn scktConn)
         {
             m_ClientConnStates = ClientConnStates.Disconnected;
-            Trace(EventType.Info, string.Format("{0} - Connection is closed: {0}", LOG_TAG, scktConn.RemoteEndPoint));
+            Trace(EventType.Info, string.Format("{0} - Connection is closed: {1}", LOG_TAG, scktConn.RemoteEndPoint));
             OnConnStatusChanged?.Invoke(ConnType.Send, false, scktConn.ConnID);
         }
 
         private void SocketClient_OnConnectError(Exception scktExp)
         {            
-            Trace(EventType.Error, string.Format("{0} - Error during client connection establishment: {0}", LOG_TAG, scktExp.Message));
+            Trace(EventType.Error, string.Format("{0} - Error during client connection establishment: {1}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketClient_OnReceiveError(Exception scktExp)
         {            
-            Trace(EventType.Error, string.Format("{0} - Error on receiving data from client connection: {0}", LOG_TAG, scktExp.Message));
+            Trace(EventType.Error, string.Format("{0} - Error on receiving data from client connection: {1}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketClient_OnSendError(Exception scktExp)
         {   
-            Trace(EventType.Error, string.Format("{0} - Error on sending data from client connection: {0}", LOG_TAG, scktExp.Message));         
+            Trace(EventType.Error, string.Format("{0} - Error on sending data from client connection: {1}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketServer_OnConnect(SocketConn scktConn)
