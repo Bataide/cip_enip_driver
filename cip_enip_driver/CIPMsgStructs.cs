@@ -14,7 +14,7 @@ using System.Reflection;
 using System.Linq;
 
 namespace Techsteel.Drivers.CIP
-{       
+{
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public class CommandEtherNetIPHeader
     {
@@ -38,7 +38,7 @@ namespace Techsteel.Drivers.CIP
                     int objSize = Marshal.SizeOf(objType);
                     if (objSize > 0)
                     {
-                        if (buffer.Length < objSize)                            
+                        if (buffer.Length < objSize)
                             throw new Exception(string.Format("Insufficient byte amount to deserialize 'Encapsulation Header' struct ({0} byte(s)", buffer.Length));
                         ptrObj = Marshal.AllocHGlobal(objSize);
                         if (ptrObj != IntPtr.Zero)
@@ -96,7 +96,7 @@ namespace Techsteel.Drivers.CIP
     public class CommandSpecificDataListServices : CIPSerializer
     {
         public ushort ItemCount;
-        public CommandSpecificDataListServicesItem[] Items;        
+        public CommandSpecificDataListServicesItem[] Items;
         public override ushort GetArraySize(string fieldName)
         {
             if (fieldName == nameof(Items))
@@ -363,5 +363,5 @@ namespace Techsteel.Drivers.CIP
     {
         public CommandSpecificDataSendRRData CommandSpecificDataSendRRData;
         public CommonIndustrialProtocolReply CommonIndustrialProtocolReply;
-    }    
+    }
 }

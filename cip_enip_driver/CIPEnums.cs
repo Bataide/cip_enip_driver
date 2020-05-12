@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Techsteel.Drivers.CIP
-{    
+{
     public enum EncapsulationCommands : ushort
     {
         NOP = 0x0000,

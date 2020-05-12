@@ -16,10 +16,10 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Techsteel.Drivers.CIP
-{    
+{
     public class CIP : Traceable
     {
-        public enum ConnType 
+        public enum ConnType
         {
             Send,
             Receive
@@ -38,15 +38,15 @@ namespace Techsteel.Drivers.CIP
         public const int DEFAULT_PORT = 0xAF12;
         private const string LOG_TAG = "CIP SND CONN.";
         private const int SEND_TIME_OUT = 2000;
-        
+
         public delegate void DlgConnStatusChanged(ConnType connType, bool connected, string connID);
         public delegate void DlgConnRecReceivedMsgData(string remoteEndPoint, string symbol, ElementaryDataType dataType, byte[] data);
         public delegate void DlgRegistrationSession(uint sessionNumber);
-        
+
         public event DlgConnStatusChanged OnConnStatusChanged;
         public event DlgConnRecReceivedMsgData OnConnRecReceiveMsgData;
         public event DlgRegistrationSession OnRegistrationSession;
-        
+
         private SocketServer m_SocketServer;
         private SocketClient m_SocketClient;
         private Dictionary<SocketConn, CIPConn> m_CIPConnList = new Dictionary<SocketConn, CIPConn>();
@@ -64,8 +64,8 @@ namespace Techsteel.Drivers.CIP
         private ElementaryDataType m_DataTypeToSend;
         private string m_Symbol;
         private byte? m_SendStatusResult;
-        private ManualResetEvent m_SendResetEvent = new ManualResetEvent(false);        
-        
+        private ManualResetEvent m_SendResetEvent = new ManualResetEvent(false);
+
         public CIP(string localAddress, string remoteAddress) : this (localAddress, DEFAULT_PORT, remoteAddress, DEFAULT_PORT)
         {
         }
@@ -174,7 +174,7 @@ namespace Techsteel.Drivers.CIP
                                 MsgUnconnectedSendRequest msg = new MsgUnconnectedSendRequest {
                                     CommandSpecificDataSendRRData = new CommandSpecificDataSendRRData {
                                         InterfaceHandle = 0,
-                                        Timeout = 0,                                        
+                                        Timeout = 0,
                                         ItemCount = 2,
                                         List = new CommandSpecificDataSendRRDataItem[] {
                                             new CommandSpecificDataSendRRDataItem {
@@ -202,7 +202,7 @@ namespace Techsteel.Drivers.CIP
                                         }
                                     },
                                     CIPConnectionManagerUnconnSnd = new CIPConnectionManagerUnconnSnd {
-                                        PriorityAndPickTime = 0x07,                                        
+                                        PriorityAndPickTime = 0x07,
                                         TimeOutTicks = 233,
                                         MessageRequestSize = 0,
                                         CommonIndustrialProtocolRequest = new CommonIndustrialProtocolRequest {
@@ -335,12 +335,12 @@ namespace Techsteel.Drivers.CIP
                     }
                 }
                 if (pointer >= m_ReceiveBuffer.Length)
-                {                
+                {
                     m_ReceiveBuffer.SetLength(0);
                     m_ReceiveBuffer.Capacity = 0;
-                    m_ReceiveBuffer.Position = 0;                
+                    m_ReceiveBuffer.Position = 0;
                     Trace(EventType.Full, string.Format("{0} - Receive buffer clear!", LOG_TAG));
-                }                
+                }
             }
             catch (Exception e)
             {
@@ -353,11 +353,11 @@ namespace Techsteel.Drivers.CIP
         {
             int pointer = 0;
             Trace(EventType.Full, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
-            long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));            
+            long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));
             switch (header.Command)
             {
                 case EncapsulationCommands.ListServices:
-                {                  
+                {
                     if (bodyBytes.Length > 0)
                     {
                         MsgListServiceReply msgReply = (MsgListServiceReply)MsgListServiceReply.Deserialize(typeof(MsgListServiceReply), bodyBytes, ref pointer);
@@ -396,7 +396,7 @@ namespace Techsteel.Drivers.CIP
                 }
 
                 case EncapsulationCommands.UnRegisterSession:
-                {                    
+                {
                     break;
                 }
 
@@ -405,7 +405,7 @@ namespace Techsteel.Drivers.CIP
                     throw new Exception(string.Format("Command {0} not implemented", header.Command));
                 }
             }
-        }      
+        }
 
         public void SendData(string symbol, ElementaryDataType dataType, byte[] dataBytes)
         {
@@ -466,39 +466,39 @@ namespace Techsteel.Drivers.CIP
         }
 
         private void SocketClient_OnConnectError(Exception scktExp)
-        {            
+        {
             Trace(EventType.Error, string.Format("{0} - Error during client connection establishment: {1}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketClient_OnReceiveError(Exception scktExp)
-        {            
+        {
             Trace(EventType.Error, string.Format("{0} - Error on receiving data from client connection: {1}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketClient_OnSendError(Exception scktExp)
-        {   
+        {
             Trace(EventType.Error, string.Format("{0} - Error on sending data from client connection: {1}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketServer_OnConnect(SocketConn scktConn)
-        {            
+        {
             lock (m_CIPConnList)
             {
                 CIPConn cipConn = new CIPConn(scktConn);
-                cipConn.OnEventTrace += CIPConn_OnEventTrace;               
+                cipConn.OnEventTrace += CIPConn_OnEventTrace;
                 cipConn.OnReceiveData += OnConnRecReceivedDataMsg;
                 cipConn.Open();
                 m_CIPConnList.Add(scktConn, cipConn);
             }
-            OnConnStatusChanged?.Invoke(ConnType.Receive, true, scktConn.ConnID);            
+            OnConnStatusChanged?.Invoke(ConnType.Receive, true, scktConn.ConnID);
         }
 
         private void SocketServer_OnDisconnect(SocketConn scktConn)
-        {           
+        {
             lock (m_CIPConnList)
                 if (m_CIPConnList.ContainsKey(scktConn))
                     m_CIPConnList.Remove(scktConn);
-            OnConnStatusChanged?.Invoke(ConnType.Receive, false, scktConn.ConnID);             
+            OnConnStatusChanged?.Invoke(ConnType.Receive, false, scktConn.ConnID);
         }
 
         private void OnConnRecReceivedDataMsg(string remoteEndPoint, string symbol, ElementaryDataType dataType, byte[] data)
