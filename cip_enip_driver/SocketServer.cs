@@ -71,8 +71,7 @@ namespace Techsteel.Drivers.CIP
         public void TerminateListen()
         {
             m_Terminate = true;
-            m_IncomingSocket?.Shutdown(SocketShutdown.Both);
-            m_IncomingSocket?.Close();
+            m_IncomingSocket?.Disconnect(false);
             m_AcceptDelayWaitHandle.Set();
         }
 
@@ -165,9 +164,9 @@ namespace Techsteel.Drivers.CIP
 
         private void ThreadTask()
         {
-            try
+            while (!m_Terminate)
             {
-                while (!m_Terminate)
+                try
                 {
                     Socket sckt = null;
                     try
@@ -207,18 +206,18 @@ namespace Techsteel.Drivers.CIP
                         }
                         else
                         {
-                            sckt.Close();
                             Trace(
                                 EventType.Warning,
                                 "Socket connection refused. Reached connection limit of {0} connections. {1}/{2}",
                                 MaxConn,
                                 sckt.LocalEndPoint,
                                 sckt.RemoteEndPoint);
+                            sckt.Close();
                         }
                     }
                 }
+                catch (Exception exc) { Trace(exc); }
             }
-            catch (Exception exc) { Trace(exc); }
         }
 
         private void ScktConn_OnEventTrace(EventType type, string message)
