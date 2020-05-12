@@ -372,7 +372,7 @@ namespace Techsteel.Drivers.CIP
                 {
                     if (header.Status == 0 && header.SessionHandle != 0)
                     {
-                        MsgRegisterSessionReply msgReply = (MsgRegisterSessionReply)MsgListServiceReply.Deserialize(typeof(MsgRegisterSessionReply), bodyBytes, ref pointer);
+                        MsgRegisterSessionReply msgReply = (MsgRegisterSessionReply)MsgRegisterSessionReply.Deserialize(typeof(MsgRegisterSessionReply), bodyBytes, ref pointer);
                         Trace(EventType.Info, string.Format("{0} - Registration session number: {1}", LOG_TAG, header.SessionHandle));
                         m_SessionHandle = header.SessionHandle;
                         m_ClientConnStates = ClientConnStates.SendReceive;

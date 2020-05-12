@@ -179,7 +179,7 @@ namespace Techsteel.Drivers.CIP
                     {
                         int pointer = 0;
                         CommandSpecificDataRegisterSession cmdSpecData =
-                            (CommandSpecificDataRegisterSession)CommandSpecificDataListServices.Deserialize(
+                            (CommandSpecificDataRegisterSession)CommandSpecificDataRegisterSession.Deserialize(
                                 typeof(CommandSpecificDataRegisterSession), bodyBytes, ref pointer);
                         MsgRegisterSessionReply msg = new MsgRegisterSessionReply();
                         // TODO: check the protocol version to accept the registration
