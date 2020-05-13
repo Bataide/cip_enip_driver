@@ -208,13 +208,6 @@ namespace Techsteel.Drivers.CIP
                                         CommonIndustrialProtocolRequest = new CommonIndustrialProtocolRequest {
                                             Service = 0x4d,
                                             RequestPathSize = 0,
-                                            PathSegmentList = new List<PathSegment> {
-                                                new DataPathSegmentANSISymb {
-                                                    PathSegmentType = 0x91,
-                                                    DataSize = (byte)m_Symbol.Length,
-                                                    ANSISymbol = Encoding.ASCII.GetBytes(m_Symbol.Length % 2 == 0 ? m_Symbol : m_Symbol + "\0")
-                                                }
-                                            }
                                         },
                                         CIPClassGeneric = new CIPClassGeneric {
                                             DataType = m_DataTypeToSend,
@@ -236,8 +229,8 @@ namespace Techsteel.Drivers.CIP
                                     }
                                 };
 
-                                msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList.Clear();
-                                string[] segs = m_Symbol.Split(new char[] {'.'});
+                                msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList = new List<PathSegment>();
+                                string[] segs = m_Symbol.Split(new char[] {'.'}, StringSplitOptions.RemoveEmptyEntries);
                                 foreach (string seg in segs)
                                     msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList.Add(
                                         new DataPathSegmentANSISymb {
