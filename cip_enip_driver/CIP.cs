@@ -63,6 +63,7 @@ namespace Techsteel.Drivers.CIP
         private byte[] m_DataToSend;
         private ElementaryDataType m_DataTypeToSend;
         private string m_Symbol;
+        private byte m_LinkAddress;
         private byte? m_SendStatusResult;
         private ManualResetEvent m_SendResetEvent = new ManualResetEvent(false);
 
@@ -193,11 +194,11 @@ namespace Techsteel.Drivers.CIP
                                         PathSegmentList = new List<PathSegment> {
                                             new LogicalPathSegment8bits {
                                                 PathSegmentType = 0x20,
-                                                LogicalValue = 0x06
+                                                LogicalValue = 0x06 // Connection Manager Class ID
                                             },
                                             new LogicalPathSegment8bits {
                                                 PathSegmentType = 0x24,
-                                                LogicalValue = 0x01
+                                                LogicalValue = 0x01 // Instance ID
                                             }
                                         }
                                     },
@@ -222,7 +223,7 @@ namespace Techsteel.Drivers.CIP
                                                 PathSegmentType = 0x01,
                                                 OptionalLinkAddressSize = null,
                                                 OptionalExtendedPortIdentifier = null,
-                                                LinkAddress = new byte[] { 0 },
+                                                LinkAddress = new byte[] { m_LinkAddress },
                                                 Pad = null
                                             }
                                         }
@@ -400,7 +401,7 @@ namespace Techsteel.Drivers.CIP
             }
         }
 
-        public void SendData(string symbol, ElementaryDataType dataType, byte[] dataBytes)
+        public void SendData(string symbol, ElementaryDataType dataType, byte[] dataBytes, byte linkaddress = 0)
         {
             lock (m_SndMutex)
                 if (m_SocketClient.Connected)
@@ -410,6 +411,7 @@ namespace Techsteel.Drivers.CIP
                     m_SendResetEvent.Reset();
                     m_SenderContext = DateTime.Now.Ticks;
                     m_Symbol = symbol;
+                    m_LinkAddress = linkaddress;
                     m_DataToSend = dataBytes;
                     m_DataTypeToSend = dataType;
                     m_SendStatusResult = null;
