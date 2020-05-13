@@ -345,7 +345,7 @@ namespace Techsteel.Drivers.CIP
         private void MessageFactory(CommandEtherNetIPHeader header, byte[] bodyBytes)
         {
             int pointer = 0;
-            Trace(EventType.Full, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
+            Trace(EventType.Full, string.Format("{0} - Receive msg. '{1}' with status {2}", LOG_TAG, header.Command, header.Status));
             long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));
             switch (header.Command)
             {
