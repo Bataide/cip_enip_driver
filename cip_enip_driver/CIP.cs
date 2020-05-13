@@ -189,7 +189,7 @@ namespace Techsteel.Drivers.CIP
                                         }
                                     },
                                     CommonIndustrialProtocolRequest = new CommonIndustrialProtocolRequest {
-                                        Service = 0x52,
+                                        Service = 0x52, // Unconnected Send Service ID
                                         RequestPathSize = 2,
                                         PathSegmentList = new List<PathSegment> {
                                             new LogicalPathSegment8bits {
@@ -198,7 +198,7 @@ namespace Techsteel.Drivers.CIP
                                             },
                                             new LogicalPathSegment8bits {
                                                 PathSegmentType = 0x24,
-                                                LogicalValue = 0x01 // Instance ID
+                                                LogicalValue = 0x01 // Connection Manager Instance ID
                                             }
                                         }
                                     },
@@ -207,7 +207,7 @@ namespace Techsteel.Drivers.CIP
                                         TimeOutTicks = 233,
                                         MessageRequestSize = 0,
                                         CommonIndustrialProtocolRequest = new CommonIndustrialProtocolRequest {
-                                            Service = 0x4d,
+                                            Service = 0x4d, // CIP Write Data Service
                                             RequestPathSize = 0,
                                         },
                                         CIPClassGeneric = new CIPClassGeneric {
