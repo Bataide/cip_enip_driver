@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 
 namespace Techsteel.Drivers.CIP
-{       
+{
     public class CIPSerializer
     {
         public ushort SizeOf()
@@ -184,7 +184,7 @@ namespace Techsteel.Drivers.CIP
             if (obj is long) return BitConverter.GetBytes((long)obj);
             if (obj is ulong) return BitConverter.GetBytes((ulong)obj);
             throw new Exception(string.Format("Serialize error. Primitive type {0} not supported.", obj.GetType().FullName));
-        }      
+        }
 
         public static object Deserialize(Type type, byte[] data, ref int pointer)
         {

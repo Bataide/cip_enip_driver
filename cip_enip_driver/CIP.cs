@@ -16,10 +16,10 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Techsteel.Drivers.CIP
-{    
+{
     public class CIP : Traceable
     {
-        public enum ConnType 
+        public enum ConnType
         {
             Send,
             Receive
@@ -38,15 +38,15 @@ namespace Techsteel.Drivers.CIP
         public const int DEFAULT_PORT = 0xAF12;
         private const string LOG_TAG = "CIP SND CONN.";
         private const int SEND_TIME_OUT = 2000;
-        
+
         public delegate void DlgConnStatusChanged(ConnType connType, bool connected, string connID);
         public delegate void DlgConnRecReceivedMsgData(string remoteEndPoint, string symbol, ElementaryDataType dataType, byte[] data);
         public delegate void DlgRegistrationSession(uint sessionNumber);
-        
+
         public event DlgConnStatusChanged OnConnStatusChanged;
         public event DlgConnRecReceivedMsgData OnConnRecReceiveMsgData;
         public event DlgRegistrationSession OnRegistrationSession;
-        
+
         private SocketServer m_SocketServer;
         private SocketClient m_SocketClient;
         private Dictionary<SocketConn, CIPConn> m_CIPConnList = new Dictionary<SocketConn, CIPConn>();
@@ -63,9 +63,10 @@ namespace Techsteel.Drivers.CIP
         private byte[] m_DataToSend;
         private ElementaryDataType m_DataTypeToSend;
         private string m_Symbol;
+        private byte m_LinkAddress;
         private byte? m_SendStatusResult;
-        private ManualResetEvent m_SendResetEvent = new ManualResetEvent(false);        
-        
+        private ManualResetEvent m_SendResetEvent = new ManualResetEvent(false);
+
         public CIP(string localAddress, string remoteAddress) : this (localAddress, DEFAULT_PORT, remoteAddress, DEFAULT_PORT)
         {
         }
@@ -174,7 +175,7 @@ namespace Techsteel.Drivers.CIP
                                 MsgUnconnectedSendRequest msg = new MsgUnconnectedSendRequest {
                                     CommandSpecificDataSendRRData = new CommandSpecificDataSendRRData {
                                         InterfaceHandle = 0,
-                                        Timeout = 0,                                        
+                                        Timeout = 0,
                                         ItemCount = 2,
                                         List = new CommandSpecificDataSendRRDataItem[] {
                                             new CommandSpecificDataSendRRDataItem {
@@ -188,33 +189,26 @@ namespace Techsteel.Drivers.CIP
                                         }
                                     },
                                     CommonIndustrialProtocolRequest = new CommonIndustrialProtocolRequest {
-                                        Service = 0x52,
+                                        Service = 0x52, // Unconnected Send Service ID
                                         RequestPathSize = 2,
                                         PathSegmentList = new List<PathSegment> {
                                             new LogicalPathSegment8bits {
                                                 PathSegmentType = 0x20,
-                                                LogicalValue = 0x06
+                                                LogicalValue = 0x06 // Connection Manager Class ID
                                             },
                                             new LogicalPathSegment8bits {
                                                 PathSegmentType = 0x24,
-                                                LogicalValue = 0x01
+                                                LogicalValue = 0x01 // Connection Manager Instance ID
                                             }
                                         }
                                     },
                                     CIPConnectionManagerUnconnSnd = new CIPConnectionManagerUnconnSnd {
-                                        PriorityAndPickTime = 0x07,                                        
+                                        PriorityAndPickTime = 0x07,
                                         TimeOutTicks = 233,
                                         MessageRequestSize = 0,
                                         CommonIndustrialProtocolRequest = new CommonIndustrialProtocolRequest {
-                                            Service = 0x4d,
+                                            Service = 0x4d, // CIP Write Data Service
                                             RequestPathSize = 0,
-                                            PathSegmentList = new List<PathSegment> {
-                                                new DataPathSegmentANSISymb {
-                                                    PathSegmentType = 0x91,
-                                                    DataSize = (byte)m_Symbol.Length,
-                                                    ANSISymbol = Encoding.ASCII.GetBytes(m_Symbol.Length % 2 == 0 ? m_Symbol : m_Symbol + "\0")
-                                                }
-                                            }
                                         },
                                         CIPClassGeneric = new CIPClassGeneric {
                                             DataType = m_DataTypeToSend,
@@ -229,15 +223,15 @@ namespace Techsteel.Drivers.CIP
                                                 PathSegmentType = 0x01,
                                                 OptionalLinkAddressSize = null,
                                                 OptionalExtendedPortIdentifier = null,
-                                                LinkAddress = new byte[] { 0 },
+                                                LinkAddress = new byte[] { m_LinkAddress },
                                                 Pad = null
                                             }
                                         }
                                     }
                                 };
 
-                                msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList.Clear();
-                                string[] segs = m_Symbol.Split(new char[] {'.'});
+                                msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList = new List<PathSegment>();
+                                string[] segs = m_Symbol.Split(new char[] {'.'}, StringSplitOptions.RemoveEmptyEntries);
                                 foreach (string seg in segs)
                                     msg.CIPConnectionManagerUnconnSnd.CommonIndustrialProtocolRequest.PathSegmentList.Add(
                                         new DataPathSegmentANSISymb {
@@ -314,7 +308,7 @@ namespace Techsteel.Drivers.CIP
                             }
                             catch (Exception e)
                             {
-                                Trace(EventType.Error, string.Format("{0} - Exception in msg. factory", LOG_TAG, data.Length));
+                                Trace(EventType.Error, string.Format("{0} - Exception in msg. factory", LOG_TAG));
                                 Trace(e);
                             }
                             m_WaitingRemainingBytes = DateTime.MinValue;
@@ -335,12 +329,12 @@ namespace Techsteel.Drivers.CIP
                     }
                 }
                 if (pointer >= m_ReceiveBuffer.Length)
-                {                
+                {
                     m_ReceiveBuffer.SetLength(0);
                     m_ReceiveBuffer.Capacity = 0;
-                    m_ReceiveBuffer.Position = 0;                
+                    m_ReceiveBuffer.Position = 0;
                     Trace(EventType.Full, string.Format("{0} - Receive buffer clear!", LOG_TAG));
-                }                
+                }
             }
             catch (Exception e)
             {
@@ -352,12 +346,12 @@ namespace Techsteel.Drivers.CIP
         private void MessageFactory(CommandEtherNetIPHeader header, byte[] bodyBytes)
         {
             int pointer = 0;
-            Trace(EventType.Full, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
-            long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));            
+            Trace(EventType.Full, string.Format("{0} - Receive msg. '{1}' with status {2}", LOG_TAG, header.Command, header.Status));
+            long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));
             switch (header.Command)
             {
                 case EncapsulationCommands.ListServices:
-                {                  
+                {
                     if (bodyBytes.Length > 0)
                     {
                         MsgListServiceReply msgReply = (MsgListServiceReply)MsgListServiceReply.Deserialize(typeof(MsgListServiceReply), bodyBytes, ref pointer);
@@ -372,7 +366,7 @@ namespace Techsteel.Drivers.CIP
                 {
                     if (header.Status == 0 && header.SessionHandle != 0)
                     {
-                        MsgRegisterSessionReply msgReply = (MsgRegisterSessionReply)MsgListServiceReply.Deserialize(typeof(MsgRegisterSessionReply), bodyBytes, ref pointer);
+                        MsgRegisterSessionReply msgReply = (MsgRegisterSessionReply)MsgRegisterSessionReply.Deserialize(typeof(MsgRegisterSessionReply), bodyBytes, ref pointer);
                         Trace(EventType.Info, string.Format("{0} - Registration session number: {1}", LOG_TAG, header.SessionHandle));
                         m_SessionHandle = header.SessionHandle;
                         m_ClientConnStates = ClientConnStates.SendReceive;
@@ -396,7 +390,7 @@ namespace Techsteel.Drivers.CIP
                 }
 
                 case EncapsulationCommands.UnRegisterSession:
-                {                    
+                {
                     break;
                 }
 
@@ -405,9 +399,9 @@ namespace Techsteel.Drivers.CIP
                     throw new Exception(string.Format("Command {0} not implemented", header.Command));
                 }
             }
-        }      
+        }
 
-        public void SendData(string symbol, ElementaryDataType dataType, byte[] dataBytes)
+        public void SendData(string symbol, ElementaryDataType dataType, byte[] dataBytes, byte linkaddress = 0)
         {
             lock (m_SndMutex)
                 if (m_SocketClient.Connected)
@@ -417,6 +411,7 @@ namespace Techsteel.Drivers.CIP
                     m_SendResetEvent.Reset();
                     m_SenderContext = DateTime.Now.Ticks;
                     m_Symbol = symbol;
+                    m_LinkAddress = linkaddress;
                     m_DataToSend = dataBytes;
                     m_DataTypeToSend = dataType;
                     m_SendStatusResult = null;
@@ -454,51 +449,51 @@ namespace Techsteel.Drivers.CIP
         private void SocketClient_OnConnect(SocketConn scktConn)
         {
             m_ClientConnStates = ClientConnStates.SendListServices;
-            Trace(EventType.Info, string.Format("{0} - Connection established: {0}", LOG_TAG, scktConn.RemoteEndPoint));
+            Trace(EventType.Info, string.Format("{0} - Connection established: {1}", LOG_TAG, scktConn.RemoteEndPoint));
             OnConnStatusChanged?.Invoke(ConnType.Send, true, scktConn.ConnID);
         }
 
         private void SocketClient_OnDisconnect(SocketConn scktConn)
         {
             m_ClientConnStates = ClientConnStates.Disconnected;
-            Trace(EventType.Info, string.Format("{0} - Connection is closed: {0}", LOG_TAG, scktConn.RemoteEndPoint));
+            Trace(EventType.Info, string.Format("{0} - Connection is closed: {1}", LOG_TAG, scktConn.RemoteEndPoint));
             OnConnStatusChanged?.Invoke(ConnType.Send, false, scktConn.ConnID);
         }
 
         private void SocketClient_OnConnectError(Exception scktExp)
-        {            
-            Trace(EventType.Error, string.Format("{0} - Error during client connection establishment: {0}", LOG_TAG, scktExp.Message));
+        {
+            Trace(EventType.Error, string.Format("{0} - Error during client connection establishment: {1}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketClient_OnReceiveError(Exception scktExp)
-        {            
-            Trace(EventType.Error, string.Format("{0} - Error on receiving data from client connection: {0}", LOG_TAG, scktExp.Message));
+        {
+            Trace(EventType.Error, string.Format("{0} - Error on receiving data from client connection: {1}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketClient_OnSendError(Exception scktExp)
-        {   
-            Trace(EventType.Error, string.Format("{0} - Error on sending data from client connection: {0}", LOG_TAG, scktExp.Message));         
+        {
+            Trace(EventType.Error, string.Format("{0} - Error on sending data from client connection: {1}", LOG_TAG, scktExp.Message));
         }
 
         private void SocketServer_OnConnect(SocketConn scktConn)
-        {            
+        {
             lock (m_CIPConnList)
             {
                 CIPConn cipConn = new CIPConn(scktConn);
-                cipConn.OnEventTrace += CIPConn_OnEventTrace;               
+                cipConn.OnEventTrace += CIPConn_OnEventTrace;
                 cipConn.OnReceiveData += OnConnRecReceivedDataMsg;
                 cipConn.Open();
                 m_CIPConnList.Add(scktConn, cipConn);
             }
-            OnConnStatusChanged?.Invoke(ConnType.Receive, true, scktConn.ConnID);            
+            OnConnStatusChanged?.Invoke(ConnType.Receive, true, scktConn.ConnID);
         }
 
         private void SocketServer_OnDisconnect(SocketConn scktConn)
-        {           
+        {
             lock (m_CIPConnList)
                 if (m_CIPConnList.ContainsKey(scktConn))
                     m_CIPConnList.Remove(scktConn);
-            OnConnStatusChanged?.Invoke(ConnType.Receive, false, scktConn.ConnID);             
+            OnConnStatusChanged?.Invoke(ConnType.Receive, false, scktConn.ConnID);
         }
 
         private void OnConnRecReceivedDataMsg(string remoteEndPoint, string symbol, ElementaryDataType dataType, byte[] data)

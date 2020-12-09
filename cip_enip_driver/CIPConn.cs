@@ -15,7 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Techsteel.Drivers.CIP
-{    
+{
     public class CIPConn : Traceable
     {
         public event CIP.DlgConnRecReceivedMsgData OnReceiveData;
@@ -39,7 +39,7 @@ namespace Techsteel.Drivers.CIP
             m_ScktConn.OnDisconnect += ScktConn_OnDisconnect;
             m_ScktConn.OnReceiveData += ScktConn_OnReceiveData;
             m_ScktConn.OnReceiveError += ScktConn_OnReceiveError;
-            m_ScktConn.OnSendError += ScktConn_OnSendError;            
+            m_ScktConn.OnSendError += ScktConn_OnSendError;
         }
 
         public void Open()
@@ -47,7 +47,7 @@ namespace Techsteel.Drivers.CIP
             if (m_Thread == null)
             {
                 m_Thread = new Thread(ThreadTask);
-                m_Thread.Start();            
+                m_Thread.Start();
                 Trace(EventType.Info, string.Format("{0} - Connection established: {1}", LOG_TAG, m_ScktConn.RemoteEndPoint));
             }
         }
@@ -61,11 +61,11 @@ namespace Techsteel.Drivers.CIP
         }
 
         private void ScktConn_OnDisconnect(SocketConn scktConn)
-        {           
+        {
             try
             {
                 Trace(EventType.Info, string.Format("{0} - Connection is closed: {1}", LOG_TAG, scktConn.RemoteEndPoint));
-                Close();                
+                Close();
             }
             catch (Exception e)
             {
@@ -86,14 +86,14 @@ namespace Techsteel.Drivers.CIP
         }
 
         private void ScktConn_OnReceiveError(SocketConn scktConn, Exception scktExp)
-        {            
+        {
             Trace(EventType.Error, string.Format("{0} - Receive socket error {1}", LOG_TAG, scktExp.Message));
         }
 
         private void ScktConn_OnSendError(SocketConn scktConn, Exception scktExp)
-        {            
+        {
             Trace(EventType.Error, string.Format("{0} - Send socket error {1}", LOG_TAG, scktExp.Message));
-        }        
+        }
 
         public void ReceiveBytes(byte[] data)
         {
@@ -136,27 +136,27 @@ namespace Techsteel.Drivers.CIP
                 }
             }
             if (pointer >= m_ReceiveBuffer.Length)
-            {                
+            {
                 m_ReceiveBuffer.SetLength(0);
                 m_ReceiveBuffer.Capacity = 0;
-                m_ReceiveBuffer.Position = 0;                
+                m_ReceiveBuffer.Position = 0;
                 Trace(EventType.Full, string.Format("{0} - Receive buffer clear!", LOG_TAG));
             }
         }
-        
+
         private void MessageFactory(CommandEtherNetIPHeader header, byte[] bodyBytes)
         {
             try
             {
                 Trace(EventType.Full, string.Format("{0} - Receive msg. '{1}'", LOG_TAG, header.Command));
-                long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));            
+                long headerSize = Marshal.SizeOf(typeof(CommandEtherNetIPHeader));
                 switch (header.Command)
                 {
                     case EncapsulationCommands.ListServices:
-                    {                  
+                    {
                         if (bodyBytes.Length == 0)
                         {
-                            MsgListServiceReply msg = new MsgListServiceReply();                        
+                            MsgListServiceReply msg = new MsgListServiceReply();
                             msg.CommandSpecificDataListServices = new CommandSpecificDataListServices();
                             msg.CommandSpecificDataListServices.ItemCount = 1;
                             msg.CommandSpecificDataListServices.Items = new CommandSpecificDataListServicesItem[1];
@@ -179,7 +179,7 @@ namespace Techsteel.Drivers.CIP
                     {
                         int pointer = 0;
                         CommandSpecificDataRegisterSession cmdSpecData =
-                            (CommandSpecificDataRegisterSession)CommandSpecificDataListServices.Deserialize(
+                            (CommandSpecificDataRegisterSession)CommandSpecificDataRegisterSession.Deserialize(
                                 typeof(CommandSpecificDataRegisterSession), bodyBytes, ref pointer);
                         MsgRegisterSessionReply msg = new MsgRegisterSessionReply();
                         // TODO: check the protocol version to accept the registration
@@ -205,7 +205,7 @@ namespace Techsteel.Drivers.CIP
                         MsgUnconnectedSendReply msg = new MsgUnconnectedSendReply();
                         msg.CommandSpecificDataSendRRData = unconnSndReq.CommandSpecificDataSendRRData;
                         CommandSpecificDataSendRRDataItem item = msg.CommandSpecificDataSendRRData.List.First(
-                            a => a.TypeID == CommonPacketItemID.UnconnectedMessage);                        
+                            a => a.TypeID == CommonPacketItemID.UnconnectedMessage);
                         msg.CommonIndustrialProtocolReply = new CommonIndustrialProtocolReply {
                             Service = 0xcd,
                             Reserved = 0x0,
@@ -220,7 +220,7 @@ namespace Techsteel.Drivers.CIP
                     }
 
                     case EncapsulationCommands.UnRegisterSession:
-                    {                    
+                    {
                         break;
                     }
 
@@ -271,7 +271,7 @@ namespace Techsteel.Drivers.CIP
             {
                 Trace(exc);
             }
-        }    
+        }
 
         private void SendMessage(CommandEtherNetIPHeader header, CIPSerializer msg)
         {
@@ -283,7 +283,7 @@ namespace Techsteel.Drivers.CIP
             Trace(EventType.Full, string.Format("{0} - Msg. '{1}' queued to be send", LOG_TAG, header.Command));
             lock (m_SendMsgList)
                 m_SendMsgList.Add(allBytes);
-            m_ThreadResetEvent.Set();            
+            m_ThreadResetEvent.Set();
         }
     }
 }
